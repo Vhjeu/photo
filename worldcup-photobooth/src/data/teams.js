@@ -1,5 +1,5 @@
 export const teams = [
-    { id: 'arg', name: 'Argentina', colors: ['#43A1D5', '#FFFFFF'], slogan: 'VAMOS ARGENTINA', flagUrl: '/images/flags/arg.svg', frameUrl: '/images/frames/frame-arg.png' },
+    { id: 'arg', name: 'Argentina', colors: ['#43A1D5', '#FFFFFF'], slogan: 'VAMOS ARGENTINA', flagUrl: '/images/flags/arg.svg', frameUrl: '/images/frames/frame-argg.png' },
     { id: 'por', name: 'Portugal', colors: ['#FF0000', '#006600'], slogan: 'FORÇA PORTUGAL', flagUrl: '/images/flags/por.svg', frameUrl: '/images/frames/frame-por.png' },
     { id: 'bra', name: 'Brazil', colors: ['#009c3b', '#ffdf00'], slogan: 'VAI BRASIL', flagUrl: '/images/flags/bra.svg', frameUrl: '/images/frames/frame-bra.png' },
     { id: 'fra', name: 'France', colors: ['#002395', '#ED2939'], slogan: 'ALLEZ LES BLEUS', flagUrl: '/images/flags/fra.svg.png', frameUrl: '/images/frames/frame-fra.png' },

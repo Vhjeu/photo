@@ -12,26 +12,22 @@ const FILTERS = [
 export default function PhotoResult({ image, team, onRetake, onHome }) {
     const canvasRef = useRef(null);
 
-    // Xử lý dữ liệu nhận từ Camera
     const imageSrc = typeof image === 'object' ? image.src : image;
     const initialFilterCss = typeof image === 'object' ? image.filter : 'none';
 
-    // Tự động chọn đúng Filter đã dùng lúc chụp
     const initialFilterObj = FILTERS.find(f => f.filter === initialFilterCss) || FILTERS[0];
 
     const [activeFilter, setActiveFilter] = useState(initialFilterObj);
     const [isProcessing, setIsProcessing] = useState(true);
 
     useEffect(() => {
-        // Bắn pháo giấy chiến thắng
         confetti({
-            particleCount: 150,
-            spread: 70,
+            particleCount: 200,
+            spread: 90,
             origin: { y: 0.6 },
             colors: team.colors
         });
 
-        // Play âm thanh cổ vũ
         const audio = new Audio('/crowd-cheer.mp3');
         audio.play().catch(() => { });
 
@@ -43,13 +39,12 @@ export default function PhotoResult({ image, team, onRetake, onHome }) {
         const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
 
-        // Kích thước xuất ảnh chuẩn Instagram Portrait (4:5)
-        const CANVAS_WIDTH = 1080;
-        const CANVAS_HEIGHT = 1350;
+        // Đã đổi sang kích thước 16:9 (Ngang)
+        const CANVAS_WIDTH = 1920;
+        const CANVAS_HEIGHT = 1080;
         canvas.width = CANVAS_WIDTH;
         canvas.height = CANVAS_HEIGHT;
 
-        // Hàm hỗ trợ tải ảnh dưới dạng Promise
         const loadImage = (src) => {
             return new Promise((resolve, reject) => {
                 const img = new Image();
@@ -60,48 +55,33 @@ export default function PhotoResult({ image, team, onRetake, onHome }) {
             });
         };
 
-        // Hàm vẽ ảnh webcam lên canvas với filter (tương thích tốt hơn)
-        const drawWebcamWithFilter = (ctx, img, filterCss, width, height) => {
-            // Nếu trình duyệt hỗ trợ ctx.filter (Chrome, Edge)
-            if (typeof ctx.filter !== 'undefined') {
-                ctx.filter = filterCss;
-                const scale = Math.max(width / img.width, height / img.height);
-                const x = (width / 2) - (img.width / 2) * scale;
-                const y = (height / 2) - (img.height / 2) * scale;
-                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-                ctx.filter = 'none';
-            } else {
-                // Fallback: vẽ không filter (tất cả trình duyệt hỗ trợ)
-                const scale = Math.max(width / img.width, height / img.height);
-                const x = (width / 2) - (img.width / 2) * scale;
-                const y = (height / 2) - (img.height / 2) * scale;
-                ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
-            }
-        };
-
-        // Tải song song cả ảnh Camera và ảnh Frame PNG
         Promise.all([
             loadImage(imageSrc),
-            loadImage(team.frameUrl).catch(() => null) // Cho phép frame fail
+            loadImage(team.frameUrl)
         ]).then(([webcamImg, frameImg]) => {
 
-            // 1. Vẽ ảnh Camera nằm dưới cùng (Áp dụng bộ lọc)
-            drawWebcamWithFilter(ctx, webcamImg, activeFilter.filter, CANVAS_WIDTH, CANVAS_HEIGHT);
+            ctx.filter = activeFilter.filter;
+            const scale = Math.max(CANVAS_WIDTH / webcamImg.width, CANVAS_HEIGHT / webcamImg.height);
+            const x = (CANVAS_WIDTH / 2) - (webcamImg.width / 2) * scale;
+            const y = (CANVAS_HEIGHT / 2) - (webcamImg.height / 2) * scale;
+            ctx.drawImage(webcamImg, x, y, webcamImg.width * scale, webcamImg.height * scale);
+            ctx.filter = 'none';
 
-            // 2. Vẽ đè Khung ảnh PNG thiết kế sẵn lên trên cùng (nếu có)
-            if (frameImg) {
-                ctx.drawImage(frameImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-            }
+            ctx.drawImage(frameImg, 0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
             setIsProcessing(false);
 
         }).catch((error) => {
-            console.error("Lỗi khi load ảnh:", error);
-            // Fallback: chỉ vẽ ảnh webcam mà không frame
+            console.error("Lỗi khi load frame PNG:", error);
             loadImage(imageSrc).then((webcamImg) => {
-                drawWebcamWithFilter(ctx, webcamImg, activeFilter.filter, CANVAS_WIDTH, CANVAS_HEIGHT);
+                ctx.filter = activeFilter.filter;
+                const scale = Math.max(CANVAS_WIDTH / webcamImg.width, CANVAS_HEIGHT / webcamImg.height);
+                const x = (CANVAS_WIDTH / 2) - (webcamImg.width / 2) * scale;
+                const y = (CANVAS_HEIGHT / 2) - (webcamImg.height / 2) * scale;
+                ctx.drawImage(webcamImg, x, y, webcamImg.width * scale, webcamImg.height * scale);
+                ctx.filter = 'none';
                 setIsProcessing(false);
-            }).catch(() => setIsProcessing(false));
+            });
         });
     };
 
@@ -116,13 +96,13 @@ export default function PhotoResult({ image, team, onRetake, onHome }) {
     };
 
     return (
-        <div className="w-full max-w-6xl flex flex-col md:flex-row gap-8 items-center md:items-start justify-center relative z-10 px-4">
-            {/* Cột Preview ảnh đã chụp */}
-            <div className="flex-1 w-full max-w-sm md:max-w-md relative">
+        <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-8 items-center lg:items-start justify-center relative z-10 px-4">
+            {/* Cột Preview ảnh ngang */}
+            <div className="flex-1 w-full max-w-4xl relative">
                 <div className="rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] border border-white/20 bg-black">
                     <canvas
                         ref={canvasRef}
-                        className="w-full h-auto aspect-[4/5] object-cover block"
+                        className="w-full h-auto aspect-video object-cover block"
                     />
                 </div>
                 {isProcessing && (
@@ -133,7 +113,7 @@ export default function PhotoResult({ image, team, onRetake, onHome }) {
             </div>
 
             {/* Cột Công cụ xử lý */}
-            <div className="w-full md:w-80 flex flex-col gap-6 bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 mt-6 md:mt-0">
+            <div className="w-full lg:w-80 flex flex-col gap-6 bg-white/5 backdrop-blur-md p-6 rounded-3xl border border-white/10 mt-6 lg:mt-0 shrink-0">
                 <div>
                     <h3 className="text-sm uppercase tracking-widest text-gray-400 font-bold mb-4 flex items-center gap-2">
                         <Palette size={16} /> Bộ lọc màu
@@ -144,8 +124,8 @@ export default function PhotoResult({ image, team, onRetake, onHome }) {
                                 key={f.id}
                                 onClick={() => setActiveFilter(f)}
                                 className={`py-2 px-1 text-xs md:text-sm rounded-lg border transition-all ${activeFilter.id === f.id
-                                    ? 'bg-wc-gold text-wc-blue border-wc-gold font-bold shadow-lg'
-                                    : 'border-white/20 text-gray-300 hover:bg-white/10'
+                                        ? 'bg-wc-gold text-wc-blue border-wc-gold font-bold shadow-lg'
+                                        : 'border-white/20 text-gray-300 hover:bg-white/10'
                                     }`}
                             >
                                 {f.name}
